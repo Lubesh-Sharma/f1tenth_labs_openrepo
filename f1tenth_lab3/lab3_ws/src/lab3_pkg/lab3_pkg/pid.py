@@ -20,8 +20,8 @@ class WallFollow(Node):
         self.drive_pub = self.create_publisher(AckermannDriveStamped, drive_topic, 10)
 
         # Set PID gains
-        self.kp = 0.5
-        self.kd = 0.1
+        self.kp = 0.75
+        self.kd = 0.70
         self.ki = 0.01
 
         # Store history
@@ -30,7 +30,7 @@ class WallFollow(Node):
         self.error = 0.0
 
         # Lookahead distance
-        self.lookahead_distance = 0.5  # You can adjust this value
+        self.lookahead_distance = 0.0001 # You can adjust this value
 
     def get_alpha(self, a, b, theta):
         """
@@ -103,11 +103,11 @@ class WallFollow(Node):
             speed: calculated driving speed
         """
         if 0 <= np.abs(np.degrees(steering_angle)) <= 10:
-            speed = 1.5
+            speed = 1.50
         elif 10 < np.abs(np.degrees(steering_angle)) <= 20:
-            speed = 1.0
+            speed = 1.00
         else:
-            speed = 0.5
+            speed = 0.70
         return speed
 
     def scan_callback(self, msg):
@@ -122,7 +122,7 @@ class WallFollow(Node):
         """
         # Obtain two laser scans (distances) a and b
         a = msg.ranges[0]  # Assuming distance at 0 degrees
-        theta = np.radians(70)  # Set the angle between beams a and b (adjust as needed)
+        theta = np.radians(75)  # Set the angle between beams a and b (adjust as needed)
         b = msg.ranges[int(theta / msg.angle_increment)]
 
         # Calculate the angle alpha
@@ -163,4 +163,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-

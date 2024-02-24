@@ -27,6 +27,9 @@ class ReactiveFollowGap(Node):
             1.Setting each value to the mean over some window
             2.Rejecting high values (eg. > 3m)
         """
+        # Convert 'ranges' to a NumPy array
+        ranges = np.abs(np.array(ranges))
+
         # Replace this with your own preprocessing logic
         window_size = 5
         proc_ranges = np.convolve(ranges, np.ones(window_size) / window_size, mode='same')
@@ -72,15 +75,17 @@ class ReactiveFollowGap(Node):
     def lidar_callback(self, data):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
         """
-        ranges = data.ranges
+        ranges = np.abs(data.ranges)
         proc_ranges = self.preprocess_lidar(ranges)
-        
+        proc_ranges= np.abs(proc_ranges)
         # Find closest point to LiDAR
         closest_point_index = np.argmin(proc_ranges)
+        last_index = len(proc_ranges) - 1
+
 
         # Draw a safety bubble around the closest point and set all points inside this bubble to 0
         bubble_radius = 1  # Set your own bubble radius
-        proc_ranges[max(0, closest_point_index - bubble_radius):closest_point_index + bubble_radius + 1] = 0.0
+        proc_ranges[max(0, closest_point_index - bubble_radius):min(closest_point_index + bubble_radius + 1,last_index)] = 0.0
 
         # Find max length gap
         gap_start, gap_end = self.find_max_gap(proc_ranges)
@@ -92,7 +97,7 @@ class ReactiveFollowGap(Node):
         drive_msg = AckermannDriveStamped()
         drive_msg.header = data.header
         drive_msg.drive.steering_angle = data.angle_min + best_point_index * data.angle_increment
-        drive_msg.drive.speed = 1.0  # Set your desired speed
+        drive_msg.drive.speed = 0.2 # Set your desired speed
         self.drive_pub.publish(drive_msg)
 
 def main(args=None):
